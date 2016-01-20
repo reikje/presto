@@ -235,7 +235,7 @@ public class CassandraSession
         for (ColumnMetadata columnMeta : tableMeta.getPartitionKey()) {
             primaryKeySet.add(columnMeta.getName());
             boolean hidden = hiddenColumns.contains(columnMeta.getName());
-            CassandraColumnHandle columnHandle = buildColumnHandle(columnMeta, true, false, columnNames.indexOf(columnMeta.getName()), hidden);
+            CassandraColumnHandle columnHandle = buildColumnHandle(tableMeta, columnMeta, true, false, columnNames.indexOf(columnMeta.getName()), hidden);
             columnHandles.add(columnHandle);
         }
 
@@ -243,7 +243,7 @@ public class CassandraSession
         for (ColumnMetadata columnMeta : tableMeta.getClusteringColumns()) {
             primaryKeySet.add(columnMeta.getName());
             boolean hidden = hiddenColumns.contains(columnMeta.getName());
-            CassandraColumnHandle columnHandle = buildColumnHandle(columnMeta, false, true, columnNames.indexOf(columnMeta.getName()), hidden);
+            CassandraColumnHandle columnHandle = buildColumnHandle(tableMeta, columnMeta, false, true, columnNames.indexOf(columnMeta.getName()), hidden);
             columnHandles.add(columnHandle);
         }
 
@@ -251,7 +251,7 @@ public class CassandraSession
         for (ColumnMetadata columnMeta : tableMeta.getColumns()) {
             if (!primaryKeySet.contains(columnMeta.getName())) {
                 boolean hidden = hiddenColumns.contains(columnMeta.getName());
-                CassandraColumnHandle columnHandle = buildColumnHandle(columnMeta, false, false, columnNames.indexOf(columnMeta.getName()), hidden);
+                CassandraColumnHandle columnHandle = buildColumnHandle(tableMeta, columnMeta, false, false, columnNames.indexOf(columnMeta.getName()), hidden);
                 columnHandles.add(columnHandle);
             }
         }
@@ -283,7 +283,7 @@ public class CassandraSession
         throw new TableNotFoundException(schemaTableName);
     }
 
-    private CassandraColumnHandle buildColumnHandle(ColumnMetadata columnMeta, boolean partitionKey, boolean clusteringKey, int ordinalPosition, boolean hidden)
+    private CassandraColumnHandle buildColumnHandle(TableMetadata tableMetadata, ColumnMetadata columnMeta, boolean partitionKey, boolean clusteringKey, int ordinalPosition, boolean hidden)
     {
         CassandraType cassandraType = CassandraType.getCassandraType(columnMeta.getType().getName());
         List<CassandraType> typeArguments = null;
@@ -300,7 +300,8 @@ public class CassandraSession
                     throw new IllegalArgumentException("Invalid type arguments: " + typeArgs);
             }
         }
-        boolean indexed = columnMeta.getIndex() != null;
+
+        boolean indexed = tableMetadata.getIndex(columnMeta.getName()) != null;
         return new CassandraColumnHandle(connectorId, columnMeta.getName(), ordinalPosition, cassandraType, typeArguments, partitionKey, clusteringKey, indexed, hidden);
     }
 
